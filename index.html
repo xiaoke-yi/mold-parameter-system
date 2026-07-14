@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>打样中心 · 模具参数库</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">模</div>
+      <div><strong>模具参数库</strong><span>打样中心调机参考</span></div>
+    </div>
+    <div class="header-actions">
+      <button id="exportBtn" class="button secondary">导出备份</button>
+      <label class="button secondary file-button">导入备份<input id="importInput" type="file" accept="application/json"></label>
+      <button id="newMoldBtn" class="button primary">＋ 新建模具</button>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <aside class="sidebar">
+      <div class="search-wrap">
+        <input id="searchInput" type="search" placeholder="搜索模具编号、名称…" autocomplete="off">
+      </div>
+      <div class="list-heading"><span>模具列表</span><span id="moldCount" class="count">0</span></div>
+      <div id="moldList" class="mold-list"></div>
+    </aside>
+
+    <section class="workspace">
+      <div id="emptyState" class="empty-state hidden">
+        <div class="empty-icon">⌁</div>
+        <h2>还没有模具记录</h2>
+        <p>新建第一套模具，把反复调试变成一次记录、随时复用。</p>
+        <button class="button primary" data-action="new">＋ 新建模具</button>
+      </div>
+
+      <div id="editor" class="editor hidden">
+        <div class="editor-head">
+          <div>
+            <div class="eyebrow">当前模具</div>
+            <h1 id="pageTitle">未命名模具</h1>
+            <div id="saveStatus" class="save-status">已保存</div>
+          </div>
+          <div class="editor-actions">
+            <button id="duplicateBtn" class="button secondary">复制为新模具</button>
+            <button id="deleteBtn" class="button danger">删除</button>
+            <button id="saveBtn" class="button primary">保存更改</button>
+          </div>
+        </div>
+
+        <nav id="tabs" class="tabs">
+          <button class="tab active" data-tab="basic">基本信息</button>
+          <button class="tab" data-tab="injection">射出参数</button>
+          <button class="tab" data-tab="clamp">模座 / 开关模</button>
+          <button class="tab" data-tab="ejector">托模参数</button>
+          <button class="tab" data-tab="hoses">油管使用</button>
+          <button class="tab" data-tab="notes">图文备注</button>
+        </nav>
+
+        <form id="moldForm" autocomplete="off">
+          <section class="tab-panel active" data-panel="basic">
+            <div class="section-title"><div><h2>基本信息</h2><p>用于快速识别模具及适用机台。</p></div><span class="required-hint">* 为必填项</span></div>
+            <div class="card form-grid">
+              <label><span>模具编号 *</span><input name="code" required placeholder="例如：1255D0005"></label>
+              <label><span>模具名称 *</span><input name="name" required placeholder="例如：杯盖模具"></label>
+              <label><span>适用机台</span><input name="machine" placeholder="例如：海天 250T"></label>
+              <label><span>产品名称 / 料号</span><input name="product" placeholder="产品或料号"></label>
+              <label><span>材料</span><input name="material" placeholder="例如：PP / ABS"></label>
+              <label><span>型腔数</span><input name="cavities" type="number" min="0" step="1" placeholder="例如：4"></label>
+              <label><span>记录人</span><input name="owner" placeholder="姓名"></label>
+              <label><span>状态</span><select name="status"><option>可用</option><option>待验证</option><option>维修中</option><option>停用</option></select></label>
+              <label class="span-2"><span>快速提示</span><textarea name="quickTip" rows="3" placeholder="换模时最需要先知道的事项，例如：先接左侧抽芯油管，再装行程开关。"></textarea></label>
+            </div>
+          </section>
+
+          <section class="tab-panel" data-panel="injection">
+            <div class="section-title"><div><h2>射出参数</h2><p>对应设备“射出设定”，按一至六段记录。</p></div></div>
+            <div class="card">
+              <h3>射出阶段</h3>
+              <div class="table-wrap"><table id="injectionTable" class="parameter-table"></table></div>
+            </div>
+            <div class="card split-card">
+              <div class="form-grid compact">
+                <label><span>转保压方式</span><select name="transferMode"><option>时间</option><option>位置</option><option>压力</option></select></label>
+                <label><span>转保压数值</span><input name="transferValue" type="number" step="any"></label>
+              </div>
+            </div>
+            <div class="card">
+              <h3>保压阶段</h3>
+              <div class="table-wrap"><table id="holdingTable" class="parameter-table"></table></div>
+            </div>
+          </section>
+
+          <section class="tab-panel" data-panel="clamp">
+            <div class="section-title"><div><h2>模座 / 开关模参数</h2><p>记录开模行程及开、关模各阶段位置、压力和速度。</p></div></div>
+            <div class="card form-grid compact"><label><span>开模行程 (mm)</span><input name="openStroke" type="number" step="any"></label><label><span>模座位置 (mm)</span><input name="platenPosition" type="number" step="any"></label><label><span>推力座位置 (mm)</span><input name="thrustPosition" type="number" step="any"></label></div>
+            <div class="card"><h3>开模设定</h3><div class="table-wrap"><table id="openTable" class="parameter-table"></table></div></div>
+            <div class="card"><h3>关模设定</h3><div class="table-wrap"><table id="closeTable" class="parameter-table"></table></div></div>
+          </section>
+
+          <section class="tab-panel" data-panel="ejector">
+            <div class="section-title"><div><h2>托模参数</h2><p>对应设备“托模吹气设定”，分别记录托进与托退。</p></div></div>
+            <div class="card form-grid compact"><label><span>托模方式</span><select name="ejectorMode"><option>定次</option><option>保持</option><option>震动</option></select></label><label><span>托模次数</span><input name="ejectorCount" type="number" min="0" step="1"></label><label><span>托模位置 (mm)</span><input name="ejectorPosition" type="number" step="any"></label></div>
+            <div class="card"><h3>托进设定</h3><div class="table-wrap"><table id="ejectForwardTable" class="parameter-table"></table></div></div>
+            <div class="card"><h3>托退设定</h3><div class="table-wrap"><table id="ejectBackTable" class="parameter-table"></table></div></div>
+          </section>
+
+          <section class="tab-panel" data-panel="hoses">
+            <div class="section-title"><div><h2>油管使用情况</h2><p>逐条记录接口、用途和接法，避免换模时接错。</p></div><button id="addHoseBtn" type="button" class="button secondary">＋ 添加油管</button></div>
+            <div id="hoseList" class="hose-list"></div>
+            <div id="hoseEmpty" class="inline-empty">暂无油管记录，点击“添加油管”开始。</div>
+          </section>
+
+          <section class="tab-panel" data-panel="notes">
+            <div class="section-title"><div><h2>图文备注</h2><p>记录接管位置、异常处理、成型注意事项等现场经验。</p></div><button id="addNoteBtn" type="button" class="button secondary">＋ 添加备注</button></div>
+            <div id="noteList" class="note-list"></div>
+            <div id="noteEmpty" class="inline-empty">暂无备注，可添加文字并上传现场照片。</div>
+          </section>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>
